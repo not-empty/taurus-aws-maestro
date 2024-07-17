@@ -1,0 +1,7 @@
+boto3
+colorama
+mysql-connector-python
+python-dotenv
+redis
+ulid-py
+requests

@@ -1,0 +1,16 @@
+{
+    "queues": [
+        {
+            "name": "queue",
+            "min_on_time": 3300,
+            "healthchecks": ["http://api1/health","http://api2/health","http://api3/health"],
+            "instance_ids": ["i-0123456789abcdef0", "i-0abcdef1234567890"]
+        },
+        {
+            "name": "another_queue",
+            "min_on_time": 3300,
+            "healthchecks": [],
+            "instance_ids": ["i-0abcdef1234567890"]
+        }
+    ]
+}
