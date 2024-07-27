@@ -1,9 +1,9 @@
-boto3==1.34.147
-colorama==0.4.6
-mysql-connector-python==9.0.0
-mysqlclient==2.2.4
-python-dotenv==1.0.1
+boto3
+colorama
+mysql-connector-python
+mysqlclient
+python-dotenv
 pytest
-redis==5.0.7
-requests==2.32.3
-ulid-py==1.1.0
+redis
+requests
+ulid-py
