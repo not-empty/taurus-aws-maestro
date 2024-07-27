@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  taurus-aws-switcher:
+    build:
+      context: ./
+      dockerfile: ./docker/dev/app/Dockerfile
+    container_name: taurus-aws-switcher
+    ports:
+      - "8080:8080"
+    depends_on:
+      taurus-switcher-mysql:
+        condition: service_healthy
+    volumes:
+      - ./:/code/
+    networks:
+      - taurus-network
+
+  taurus-switcher-mysql:
+    image: mysql
+    container_name: taurus-switcher-mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=taurus-switcher
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 35
+    volumes:
+      - ./migrations/database.sql:/docker-entrypoint-initdb.d/database.sql
+      - ./storage/.db:/var/lib/mysql
+    security_opt:
+      - seccomp:unconfined
+    networks:
+      - taurus-network
+
+networks:
+    taurus-network:
+      name: taurus-network

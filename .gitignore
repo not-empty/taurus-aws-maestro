@@ -155,3 +155,6 @@ coverage/
 # System files
 *.swp
 *.swo
+
+#Database files
+.db/

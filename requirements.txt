@@ -1,8 +1,9 @@
 boto3
 colorama
 mysql-connector-python
+mysqlclient
 python-dotenv
-redis
-ulid-py
-requests
 pytest
+redis
+requests
+ulid-py
