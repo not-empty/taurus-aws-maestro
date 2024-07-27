@@ -7,7 +7,7 @@ import ulid
 
 from helpers.ec2_manager import EC2Manager
 from helpers.taurus_manager import TaurusManager
-from helpers.request_manager import RequestManager  
+from helpers.request_manager import RequestManager
 from helpers.db_manager import DBManager
 
 db_manager = DBManager()
@@ -79,14 +79,14 @@ def check_api_healthcheck(queue_config):
         queue_name
     )
     endpoints = queue_config.get('healthchecks', [])
-    
+
     all_healthy = True
     for endpoint in endpoints:
         is_healthy, message = request_manager.check_endpoint(endpoint)
         log_action(message, queue_name, Fore.GREEN)
         if not is_healthy:
             all_healthy = False
-    
+
     if all_healthy:
         log_important_action(
             f"All healthchecks {endpoints} passed. Unpausing queue..",
@@ -166,7 +166,7 @@ def scan_queue(queue_config):
 
     instance_ids = queue_config['instance_ids']
     waiting, active, paused, is_paused = taurus_queue.get_queue_status(queue_name)
-    
+
     log_queue_status(
         queue_name,
         is_paused,
@@ -189,7 +189,7 @@ def scan_queue(queue_config):
         )
 
         queue_statuses[queue_name] = current_status
-    
+
     if not has_items:
         action_taken = False
         queue_is_paused = False
@@ -361,5 +361,5 @@ def initialize_scheduler():
             'scan_queue',
             0
         )
-    
+
     scheduler.run()
