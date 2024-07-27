@@ -243,7 +243,7 @@ class DBManager:
                 """
             params = (queue, status)
 
-            if (scanner_status):
+            if (scanner_status == 0 or scanner_status == 1):
                 query = """
                     UPDATE scanner
                     SET status = %s
