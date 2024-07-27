@@ -52,3 +52,11 @@ CREATE TABLE queue_action_logs (
     INDEX idx_action (action) USING BTREE,
     INDEX idx_created_at (created_at) USING BTREE
 );
+
+CREATE TABLE scanner (
+    queue VARCHAR(100) PRIMARY KEY,
+    status INT(11) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_queue (queue) USING BTREE,
+    INDEX idx_created_at (created_at) USING BTREE
+);

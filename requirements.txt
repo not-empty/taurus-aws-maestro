@@ -3,7 +3,6 @@ colorama
 mysql-connector-python
 mysqlclient
 python-dotenv
-pytest
 redis
 requests
 ulid-py

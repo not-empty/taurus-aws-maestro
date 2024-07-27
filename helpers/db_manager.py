@@ -186,6 +186,78 @@ class DBManager:
         )
         self.connection.commit()
 
+    def get_all_scanner_data(
+            self
+        ):
+            self.cursor.execute(
+                "SELECT * FROM scanner",
+            )
+            
+            results = self.cursor.fetchall()
+            for row in results:
+                print(row)
+
+    def get_scanner_status_by_queue(
+            self,
+            queue
+        ):
+            query = """
+                SELECT status
+                FROM scanner
+                WHERE queue = %s
+                """
+
+            self.cursor.execute(
+                query,
+                [queue]
+            )
+            
+            result = self.cursor.fetchone()
+
+            if (result):
+                return result[0]
+
+            return result
+
+    def upsert_scanner_status(
+            self,
+            queue,
+            status
+        ):
+            scanner_status = self.get_scanner_status_by_queue(queue)
+
+            if (scanner_status == status):
+                return
+
+            query = """
+                INSERT INTO
+                    scanner (
+                        queue,
+                        status,
+                        created_at
+                    )
+                VALUES (
+                    %s,
+                    %s,
+                    NOW())
+                """
+            params = (queue, status)
+
+            if (scanner_status):
+                query = """
+                    UPDATE scanner
+                    SET status = %s
+                    WHERE queue = %s
+                    """
+                params = (status, queue)
+
+            self.cursor.execute(
+                query,
+                params
+            )
+
+            self.connection.commit()
+
     def close(self):
         if SAVE_DB_HISTORY == 0:
             return

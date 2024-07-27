@@ -159,6 +159,11 @@ def check_running_instances(queue_config):
 
 def scan_queue(queue_config):
     queue_name = queue_config['name']
+
+    scanner_queue_status = db_manager.get_scanner_status_by_queue(queue_name)
+    if ((not scanner_queue_status == None) and scanner_queue_status == 0):
+        return
+
     log_event(
         'scan_queue',
         queue_name
