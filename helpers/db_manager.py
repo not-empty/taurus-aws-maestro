@@ -4,15 +4,27 @@ import ulid
 
 class DBManager:
     def __init__(self):
-        if SAVE_DB_HISTORY == 0:
-            return
-        self.connection = mysql.connector.connect(
+        self.enabled = SAVE_DB_HISTORY != 0
+
+    def _connect(self):
+        return mysql.connector.connect(
             host=MYSQL_HOST,
             user=MYSQL_USER,
             password=MYSQL_PASSWORD,
             database=MYSQL_DATABASE
         )
-        self.cursor = self.connection.cursor()
+
+    def _execute_query(self, query, params):
+        if not self.enabled:
+            return
+        connection = self._connect()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(query, params)
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close()
 
     def save_queue_status(
         self,
@@ -51,7 +63,7 @@ class DBManager:
         log_id = str(
             ulid.new()
         )
-        self.cursor.execute(
+        self._execute_query(
             query,
             (
                 log_id,
@@ -62,7 +74,6 @@ class DBManager:
                 paused,
                 is_paused)
             )
-        self.connection.commit()
 
     def save_ec2_status(
         self,
@@ -95,7 +106,7 @@ class DBManager:
         log_id = str(
             ulid.new()
         )
-        self.cursor.execute(
+        self._execute_query(
             query,
             (
                 log_id,
@@ -105,7 +116,6 @@ class DBManager:
                 status
             )
         )
-        self.connection.commit()
 
     def save_aws_action_made(
         self,
@@ -136,7 +146,7 @@ class DBManager:
                 )
         """
         log_id = str(ulid.new())
-        self.cursor.execute(
+        self._execute_query(
             query,
             (
                 log_id,
@@ -145,7 +155,6 @@ class DBManager:
                 instance_id,
                 action)
             )
-        self.connection.commit()
 
     def save_queue_action(
         self,
@@ -175,7 +184,7 @@ class DBManager:
         log_id = str(
             ulid.new()
         )
-        self.cursor.execute(
+        self._execute_query(
             query,
             (
                 log_id,
@@ -184,10 +193,4 @@ class DBManager:
                 action
             )
         )
-        self.connection.commit()
 
-    def close(self):
-        if SAVE_DB_HISTORY == 0:
-            return
-        self.cursor.close()
-        self.connection.close()
