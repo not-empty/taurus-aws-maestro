@@ -1,4 +1,4 @@
-CREATE DATABASE taurus_switcher;
+CREATE DATABASE taurus_maestro;
 
 CREATE TABLE queue_logs (
     id CHAR(26) PRIMARY KEY,

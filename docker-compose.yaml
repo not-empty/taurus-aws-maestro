@@ -1,27 +1,27 @@
 version: "3.8"
 services:
-  taurus-aws-switcher:
+  taurus-aws-maestro:
     build:
       context: ./
       dockerfile: ./docker/dev/app/Dockerfile
-    container_name: taurus-aws-switcher
+    container_name: taurus-aws-maestro
     ports:
       - "8080:8080"
     depends_on:
-      taurus-switcher-mysql:
+      taurus-maestro-mysql:
         condition: service_healthy
     volumes:
       - ./:/code/
     networks:
       - taurus-network
 
-  taurus-switcher-mysql:
+  taurus-maestro-mysql:
     image: mysql
-    container_name: taurus-switcher-mysql
+    container_name: taurus-maestro-mysql
     ports:
       - 3306:3306
     environment:
-      - MYSQL_DATABASE=taurus-switcher
+      - MYSQL_DATABASE=taurus-maestro
       - MYSQL_ROOT_PASSWORD=root
     healthcheck:
       test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
