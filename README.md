@@ -1,70 +1,233 @@
-# Taurus-AWS-Maestro
----
+# Taurus AWS Maestro (v2)
+
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+
+**Taurus AWS Maestro** automatically starts/stops EC2 instances and pauses/unpauses queues based on demand.
+
+**What’s new in v2**
+
+* **Rule‑oriented orchestration**: Group multiple queues + healthchecks + instances into a **rule**. Scaling decisions are made per rule, not per queue.
+* **Pluggable drivers**: Run against **AWS + real Taurus**, or entirely **offline** using **file‑backed fakes**.
+* **Deterministic healthchecks**: File‑controlled health behavior (e.g., “fail N times, then succeed”).
 
 ![Architecture sample](resources/images/diagrama-funcionamento-taurus-aws-maestro.png)
 
-Taurus AWS Maestro is an open-source project developed to analyze queues and applications running on AWS EC2 instances, with the aim of automatically deciding the scalability of applications based on queue demand. This project aims to help reduce costs in environments with high resource demand.
+---
 
-#### Introduction
-In environments where we adopt the use of AWS EC2 instances for the infrastructure of applications that are consumed by queues, the variability of consumption according to demand can result in high costs, especially if we keep the application machines active during periods of low usage.
+## Quickstart
 
-Taurus AWS Maestro offers an automatic and customizable solution for the scalability of applications hosted on the AWS EC2 service, adapting to queue consumption. This system ensures that the application is available whenever necessary, performing environment availability checks before releasing processing, ensuring efficiency and security.
+### 1) Clone & compose
 
-#### Features
-- **Automatic Scalability:** Automatically adapts to queue consumption, scaling applications according to demand.
-- **Resource Optimization:** Ensures that computing resources are used efficiently, avoiding waste.
-- **Customizable Solution:** Offers adjustable settings to meet the specific needs of each environment and application.
-- **Availability Checks:** Performs environment availability checks before releasing processing, ensuring the application is always ready to operate.
-- **Simplified Automation:** Facilitates the implementation of automatic scalability, reducing the need for manual interventions and operational complexity.
-- **Integration with AWS EC2:** The project is aimed at environments that use AWS EC2 instances to host queue-consuming applications.
-
-#### Configuration
-Copy the `.env.example` file to the `.env` file and change its parameters:
-
-- **AWS_ACCESS_KEY_ID:** Your public access key provided by AWS.
-- **AWS_SECRET_ACCESS_KEY:** Your secret access key provided by AWS.
-- **AWS_REGION:** AWS region where the queues and EC2 instances are operating.
-- **DEBUG_MODE:** Enables or disables debug mode. The value `1` enables debug mode, while `0` disables it.
-- **LOG_SCHEDULES:** Specifies whether schedules should be logged. The value `1` enables schedule logging.
-- **LOG_EVENTS:** Specifies whether events should be logged. The value `1` enables event logging.
-- **LOG_QUEUES:** Specifies whether queue statuses should be logged. The value `1` enables queue logging.
-- **LOG_ACTIONS:** Specifies whether actions defined by the maestro should be logged. The value `1` enables action logging.
-- **MYSQL_HOST:** Your MySQL server host address.
-- **MYSQL_USER:** Your MySQL username.
-- **MYSQL_PASSWORD:** Your MySQL password.
-- **MYSQL_DATABASE:** The name of the database to be used.
-- **REDIS_HOST:** Your Redis host.
-- **REDIS_PORT:** Your Redis port.
-- **REDIS_DB:** Your Redis database name.
-- **SAVE_DB_HISTORY:** Specifies whether the log history should be saved in the database. The value `1` enables history saving.
-- **TIME_SCAN_QUEUE_SCHEDULE:** Specifies the time interval, in seconds, for checking the scheduling queue.
-- **TIME_SCAN_EC2_STARTED_SCHEDULE:** Specifies the time interval, in seconds, for checking started EC2 instances.
-- **TIME_SCAN_EC2_STOPPED_SCHEDULE:** Specifies the time interval, in seconds, for checking stopped EC2 instances.
-- **TIME_SCAN_API_HEALTHCHECK_SCHEDULE:** Specifies the time interval, in seconds, for performing API health checks.
-
-Copy the `config.json.example` file to the `config.json` file and change the values according to the definitions below:
-
-- **name:** Name of your queue.
-- **min_on_time:** Minimum time the instance must remain active when started, in seconds.
-- **healthchecks:** List of health check URLs to monitor the status of applications associated with the queue.
-- **instance_ids:** List of EC2 instance IDs associated with the queue.
-
-#### Installation
-After forking or cloning the repository, run the following command to start the project:
-
-```sh
-docker-compose up
+```bash
+git clone https://github.com/not-empty/taurus-aws-switcher.git
+cd taurus-aws-switcher
 ```
 
-Note that the version of docker-compose used is 1.27.0+.
+### 2) Environment
 
-We should also grant the correct permissions to the storage folder using the following command:
+Copy `.env.example` → `.env` and adjust. New drivers envs:
 
-```sh
-chmod -R 777 ./storage
+* `MAESTRO_EC2_DRIVER`: `aws` | `file`
+* `MAESTRO_TAURUS_DRIVER`: `taurus` | `file`
+* `MAESTRO_REQUEST_DRIVER`: `http` | `file`
+
+> When using `file`, Maestro reads/writes hardcoded paths under `./fake_data/`.
+
+### 3) Config
+
+Create/adjust `config.json` (rule‑oriented):
+
+```json
+{
+  "rules": [
+    {
+      "name": "rule1",
+      "min_on_time": 30,
+      "queues": ["queue1", "queue2"],
+      "healthchecks": [
+        "http://api1/health",
+        "http://api2/health",
+        "http://api3/health"
+      ],
+      "instance_ids": [
+        "i-0123456789abcdef0",
+        "i-0abcdef1234567890"
+      ]
+    },
+    {
+      "name": "rule2",
+      "queues": ["another_queue"],
+      "min_on_time": 30,
+      "healthchecks": [],
+      "instance_ids": ["i-0abcdef1234567321"]
+    }
+  ]
+}
 ```
 
-By following all the steps, Taurus AWS Maestro will be able to analyze your queues and instances, automatically making scalability decisions, thus ensuring application availability and efficiency.
+### 4) Run
 
-**Not Empty Foundation - Free codes, full minds**
+```bash
+docker-compose up -d
+```
+
+---
+
+## How rules work
+
+A **rule** ties together:
+
+* **queues**: one or more Taurus queues
+* **instance\_ids**: EC2 instances backing those queues
+* **healthchecks**: HTTP endpoints to verify app readiness
+* **min\_on\_time**: minimum time (seconds) instances remain on after (re)start
+
+**Behavior**
+
+* **Work present (any queue > 0)** → ensure instances **running**.
+
+  * If healthchecks are configured: check them **before** unpausing queues.
+  * If no healthchecks: unpause immediately.
+* **All queues idle** → pause any **unpaused** queues, then stop any **running** instances.
+* **Queues are never re‑paused unnecessarily** and are only unpaused when instances are confirmed up (and healthy, if applicable).
+
+---
+
+## Drivers & fake data
+
+Set these envs to choose real vs fake backends:
+
+```
+MAESTRO_EC2_DRIVER=aws      # aws | file
+MAESTRO_TAURUS_DRIVER=taurus# taurus | file
+MAESTRO_REQUEST_DRIVER=http # http | file
+```
+
+When using `file`, Maestro uses **hardcoded** paths under `./fake_data/`:
+
+* **EC2 fake**: `./fake_data/ec2_state.json`
+
+  ```json
+  { "instances": { "i-0123456789abcdef0": "stopped", "i-0abcdef1234567890": "stopped" } }
+  ```
+
+  Accepted states: `running`, `stopped` (Maestro will flip them as it “starts/stops”).
+
+* **Taurus fake**: `./fake_data/taurus_state.json`
+
+  ```json
+  {
+    "queues": {
+      "queue1": { "waiting": 0, "active": 0, "paused": 0, "is_paused": false },
+      "queue2": { "waiting": 3, "active": 1, "paused": 0, "is_paused": false }
+    }
+  }
+  ```
+
+  You can edit counts to simulate load. Pausing moves `waiting → paused`; unpausing returns `paused → waiting`.
+
+* **Requests fake**: `./fake_data/requests_state.json`
+
+  ```json
+  {
+    "endpoints": {
+      "http://api1/health": { "fails_before_success": 1 },
+      "http://api2/health": { "fails_before_success": 1, "latency_ms": 40 },
+      "http://api3/health": { "fails_before_success": 2 }
+    }
+  }
+  ```
+
+  Each endpoint returns **503** for N checks, then **200** forever; optional `latency_ms` adds delay.
+
+---
+
+## .env.example
+
+```env
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+
+DEBUG_MODE=1
+
+LOG_SCHEDULES=1
+LOG_EVENTS=1
+LOG_QUEUES=1
+LOG_ACTIONS=1
+
+MAESTRO_EC2_DRIVER=aws
+MAESTRO_TAURUS_DRIVER=taurus
+MAESTRO_REQUEST_DRIVER=http
+
+MYSQL_HOST=localhost
+MYSQL_USER=root
+MYSQL_PASSWORD=root
+MYSQL_DATABASE=taurus-maestro
+
+REDIS_HOST=taurus-redis
+REDIS_PORT=6379
+REDIS_DB=0
+
+SAVE_DB_HISTORY=1
+
+TIME_SCAN_QUEUE_SCHEDULE=60
+TIME_SCAN_EC2_STARTED_SCHEDULE=60
+TIME_SCAN_EC2_STOPPED_SCHEDULE=60
+TIME_SCAN_API_HEALTHCHECK_SCHEDULE=60
+```
+
+**Notes**
+
+* `DEBUG_MODE=1` prints extra logs.
+* Set `SAVE_DB_HISTORY=0` to disable DB writes.
+* For offline tests, set all drivers to `file` and edit `./fake_data/*`.
+
+---
+
+## Logs & scheduling
+
+* **LOG\_SCHEDULES / LOG\_EVENTS / LOG\_QUEUES / LOG\_ACTIONS** toggle verbosity.
+* Schedulers:
+
+  * `TIME_SCAN_QUEUE_SCHEDULE`: base scan cadence
+  * `TIME_SCAN_EC2_STARTED_SCHEDULE`: recheck while instances are starting
+  * `TIME_SCAN_EC2_STOPPED_SCHEDULE`: recheck while stopping
+  * `TIME_SCAN_API_HEALTHCHECK_SCHEDULE`: cadence for retrying healthchecks
+
+---
+
+## Run modes
+
+**Production** (real AWS, real Taurus, real HTTP):
+
+change the envs to the real drivers
+```env
+MAESTRO_EC2_DRIVER=aws
+MAESTRO_TAURUS_DRIVER=taurus
+MAESTRO_REQUEST_DRIVER=http
+DEBUG_MODE=0
+```
+
+**Offline** (all fake):
+
+change the envs to the fake drivers
+```bash
+MAESTRO_EC2_DRIVER=file
+MAESTRO_TAURUS_DRIVER=file
+MAESTRO_REQUEST_DRIVER=file
+DEBUG_MODE=1
+```
+
+Then edit `./fake_data/*.json` to simulate load and state.
+
+---
+
+## Troubleshooting
+
+* **Healthcheck says “not configured”**: ensure exact URL keys exist in `./fake_data/requests_state.json` or switch to real HTTP driver.
+* **Queues never unpause**: check that healthchecks eventually reach HTTP 200 (fake file or real endpoints).
+
+---
+
+**Not Empty Foundation — Free codes, full minds**

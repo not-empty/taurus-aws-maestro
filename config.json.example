@@ -1,16 +1,32 @@
 {
-    "queues": [
+    "rules": [
         {
-            "name": "queue",
+            "name": "rule1",
             "min_on_time": 3300,
-            "healthchecks": ["http://api1/health","http://api2/health","http://api3/health"],
-            "instance_ids": ["i-0123456789abcdef0", "i-0abcdef1234567890"]
+            "queues": [
+                "queue1",
+                "queue2"
+            ],
+            "healthchecks": [
+                "http://api1/health",
+                "http://api2/health",
+                "http://api3/health"
+            ],
+            "instance_ids": [
+                "i-0123456789abcdef0",
+                "i-0abcdef1234567890"
+            ]
         },
         {
-            "name": "another_queue",
+            "name": "rule2",
+            "queues": [
+                "another_queue"
+            ],
             "min_on_time": 3300,
             "healthchecks": [],
-            "instance_ids": ["i-0abcdef1234567890"]
+            "instance_ids": [
+                "i-0abcdef1234567321"
+            ]
         }
     ]
 }

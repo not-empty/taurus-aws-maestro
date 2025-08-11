@@ -1,6 +1,12 @@
 {
   "queues": {
-    "queue": {
+    "queue1": {
+      "waiting": 0,
+      "active": 0,
+      "paused": 0,
+      "is_paused": true
+    },
+    "queue2": {
       "waiting": 0,
       "active": 0,
       "paused": 0,
