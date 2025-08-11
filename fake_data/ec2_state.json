@@ -1,0 +1,7 @@
+{
+  "instances": {
+    "i-0123456789abcdef0": "stopped",
+    "i-0abcdef1234567890": "stopped",
+    "i-0abcdef1234567321": "stopped"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "endpoints": {
+    "http://api1/health": {
+      "fails_before_success": 1,
+      "fail_count": 1
+    },
+    "http://api2/health": {
+      "fails_before_success": 1,
+      "latency_ms": 40,
+      "fail_count": 1
+    },
+    "http://api3/health": {
+      "fails_before_success": 2,
+      "fail_count": 2
+    }
+  }
+}

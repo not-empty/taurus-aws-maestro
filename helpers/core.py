@@ -5,19 +5,14 @@ import sched
 import time
 import ulid
 
-from helpers.ec2_manager import EC2Manager
-from helpers.taurus_manager import TaurusManager
-from helpers.request_manager import RequestManager
+from helpers.manager_factory import build_ec2_manager, build_taurus_manager, build_request_manager
 from helpers.db_manager import DBManager
 
-db_manager = DBManager()
-ec2_manager = EC2Manager()
-request_manager = RequestManager()
-taurus_queue = TaurusManager(
-    redis_host=config.REDIS_HOST,
-    redis_port=config.REDIS_PORT,
-    redis_db=config.REDIS_DB
-)
+db_manager    = DBManager()
+ec2_manager   = build_ec2_manager()
+taurus_queue  = build_taurus_manager()
+request_manager = build_request_manager()
+
 scheduler = sched.scheduler(
     time.time,
     time.sleep

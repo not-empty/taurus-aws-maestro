@@ -1,0 +1,16 @@
+{
+  "queues": {
+    "queue": {
+      "waiting": 0,
+      "active": 0,
+      "paused": 0,
+      "is_paused": true
+    },
+    "another_queue": {
+      "waiting": 0,
+      "active": 0,
+      "paused": 0,
+      "is_paused": true
+    }
+  }
+}
