@@ -8,11 +8,13 @@ import ulid
 
 from helpers.manager_factory import build_ec2_manager, build_taurus_manager, build_request_manager
 from helpers.db_manager import DBManager
+from helpers.slack_notifier import SlackNotifier
 
 db_manager       = DBManager()
 ec2_manager      = build_ec2_manager()
 taurus_queue     = build_taurus_manager()
 request_manager  = build_request_manager()
+slack = SlackNotifier()
 
 scheduler = sched.scheduler(time.time, time.sleep)
 
@@ -32,6 +34,7 @@ def log_action(message, name, color):
 
 def log_important_action(message, name, color):
     print(color + f"{datetime.now()} - Important Action: {message} for rule: {name}")
+    slack.post("Maestro event", f"Important Action: {message} for rule: {name}")
 
 def log_schedule(event_type, name, secs):
     if config.LOG_SCHEDULES == 1:

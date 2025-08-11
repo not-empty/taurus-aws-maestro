@@ -171,6 +171,8 @@ REDIS_DB=0
 
 SAVE_DB_HISTORY=1
 
+SLACK_WEBHOOK_URL
+
 TIME_SCAN_QUEUE_SCHEDULE=60
 TIME_SCAN_EC2_STARTED_SCHEDULE=60
 TIME_SCAN_EC2_STOPPED_SCHEDULE=60
@@ -182,6 +184,7 @@ TIME_SCAN_API_HEALTHCHECK_SCHEDULE=60
 * `DEBUG_MODE=1` prints extra logs.
 * Set `SAVE_DB_HISTORY=0` to disable DB writes.
 * For offline tests, set all drivers to `file` and edit `./fake_data/*`.
+* You can pass an slack webhook url to receive important actions.
 
 ---
 
